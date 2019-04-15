@@ -1,5 +1,7 @@
 #include "regularlocalsocket.h"
 #include <QDebug>
+#include <QTimer>
+#include <QDataStream>
 
 
 #include "matilda-bbb-src/shared/pathsresolver.h"
@@ -10,7 +12,11 @@
 #include "matildalimits.h"
 #include "dbgaboutsourcetype.h"
 
-RegularLocalSocket::RegularLocalSocket(bool verboseMode, QObject *parent) : QLocalSocket(parent)
+
+
+//---------------------------------------------------------------------------------------
+
+RegularLocalSocket::RegularLocalSocket(const bool &verboseMode, QObject *parent) : QLocalSocket(parent)
 {
     this->verboseMode = verboseMode;//extended out / verbouseMode
 #ifdef DISABLE_LOCALSOCKETVERBOSE
@@ -39,7 +45,7 @@ void RegularLocalSocket::initializeSocket(quint16 mtdExtName)
 void RegularLocalSocket::command2extensionClient(quint16 command, QVariant dataVar)
 {
     if(verboseMode)
-        qDebug() << "ZbyratorSocket::command2extensionClient " << command << dataVar;
+        qDebug() << "RegularLocalSocket::command2extensionClient " << command << dataVar;
 
     mWrite2extension(dataVar, command);
 }
@@ -115,15 +121,6 @@ void RegularLocalSocket::onThreadStarted()
 
 //---------------------------------------------------------------------------------------
 
-void RegularLocalSocket::mReadyRead()
-{
-    disconnect(this, SIGNAL(readyRead()), this, SLOT(mReadyRead()) );
-    mReadyReadF();
-    connect(this, SIGNAL(readyRead()), this, SLOT(mReadyRead()) );
-}
-
-//---------------------------------------------------------------------------------------
-
 void RegularLocalSocket::mWrite2extension(const QVariant &s_data, const quint16 &s_command)
 {
     if(stopAll){
@@ -152,6 +149,23 @@ void RegularLocalSocket::mWrite2extension(const QVariant &s_data, const quint16 
     write(block);
     waitForBytesWritten(50);
     timeHalmo.restart();
+}
+
+//---------------------------------------------------------------------------------------
+
+void RegularLocalSocket::sendAboutZigBeeModem(QVariantHash aboutModem)
+{
+    mWrite2extension(aboutModem, MTD_EXT_ABOUT_ZB);
+
+}
+
+//---------------------------------------------------------------------------------------
+
+void RegularLocalSocket::mReadyRead()
+{
+    disconnect(this, SIGNAL(readyRead()), this, SLOT(mReadyRead()) );
+    mReadyReadF();
+    connect(this, SIGNAL(readyRead()), this, SLOT(mReadyRead()) );
 }
 
 //---------------------------------------------------------------------------------------
@@ -209,8 +223,8 @@ void RegularLocalSocket::mReadyReadF()
     QTime timeG;
     timeG.start();
 
-    int timeOutG = 9999;
-    int timeOut = 300;
+    const int timeOutG = 9999;
+    const int timeOut = 300;
 
     while(bytesAvailable() < blockSize && timeG.elapsed() < timeOutG){
 
@@ -228,17 +242,50 @@ void RegularLocalSocket::mReadyReadF()
     if(bytesAvailable() == blockSize){
         QVariant readVar;
         inStrm >> serverCommand >> readVar;
-        decodeReadData(readVar, serverCommand);
+        decodeReadDataF(readVar, serverCommand);
 
     }else{
         if(!inStrm.atEnd()){
             QVariant readVar;
             inStrm >> serverCommand >> readVar;
-            decodeReadData(readVar, serverCommand);
+            decodeReadDataF(readVar, serverCommand);
             QTimer::singleShot(11, this, SLOT(mReadyRead()) );
             return;
         }
     }
+}
+
+//---------------------------------------------------------------------------------------
+
+void RegularLocalSocket::decodeReadDataF(const QVariant &dataVar, const quint16 &command)
+{
+    //it decodes staff commands, other - sends to a child class
+    if(activeDbgMessages)
+        emit appendDbgExtData(DBGEXT_THELOCALSOCKET, QString("decodeReadData r: %1").arg(command));
+
+    bool commandIsFound = true;
+   switch(command){
+
+   case MTD_EXT_GET_INFO: {
+       mWrite2extension(mtdExtName, MTD_EXT_GET_INFO );
+       if(verboseMode) qDebug() << "ext " << mtdExtName << dataVar;
+       break;}
+
+   case MTD_EXT_GET_LOCATION: {
+       if(verboseMode) qDebug() << "ext " << mtdExtName << dataVar;
+       break;}
+
+   case MTD_EXT_PING: {
+       emit startZombieDetect();
+       emit stopZombieKiller();
+       break;}
+   default: commandIsFound = false;
+
+   }
+   if(commandIsFound)
+       return;
+
+   decodeReadData(dataVar, command);
 }
 
 //---------------------------------------------------------------------------------------

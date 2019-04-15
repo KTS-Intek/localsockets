@@ -2,12 +2,16 @@
 #define REGULARLOCALSOCKET_H
 
 #include <QLocalSocket>
+#include <QTime>
+#include <QVariantHash>
+#include <QVariantMap>
+
 
 class RegularLocalSocket : public QLocalSocket
 {
     Q_OBJECT
 public:
-    explicit RegularLocalSocket(bool verboseMode, QObject *parent = nullptr);
+    explicit RegularLocalSocket(const bool &verboseMode, QObject *parent = nullptr);
     bool activeDbgMessages;
 
     quint16 mtdExtName;
@@ -30,10 +34,11 @@ signals:
     void stopZombieDetect();
 
 
-    void onConfigChanged(quint16, QVariant);
+    void onConfigChanged(quint16 command, QVariant datavar);
 
-    void command4dev(quint16 command, QString args);
+    void command4dev(quint16 command, QString args);//directly to scheduler, command is a pollcode,
 
+//    void command4devHash(quint16 command, QVariantHash hash);//directly to scheduler, command is a pollcode,
 
     void appendDbgExtData(quint32 sourceType, QString data);
 
@@ -48,9 +53,12 @@ public slots:
 
     void onThreadStarted();
 
+    void mWrite2extension(const QVariant &s_data, const quint16 &s_command);
+
+    void sendAboutZigBeeModem(QVariantHash aboutModem);
+
 private slots:
     void mReadyRead();
-    void mWrite2extension(const QVariant &s_data, const quint16 &s_command);
     void onDisconn();
 
     void onZombie();
@@ -59,6 +67,8 @@ private slots:
 
 private:
     void mReadyReadF();
+
+    void decodeReadDataF(const QVariant &dataVar, const quint16 &command);
 
 
 };
