@@ -42,6 +42,9 @@ signals:
 
     void appendDbgExtData(quint32 sourceType, QString data);
 
+
+
+
 public slots:
     //for client side
     void initializeSocket(quint16 mtdExtName);
@@ -56,6 +59,8 @@ public slots:
     void mWrite2extension(const QVariant &s_data, const quint16 &s_command);
 
     void sendAboutZigBeeModem(QVariantHash aboutModem);
+
+    void killAllObjects();
 
 private slots:
     void mReadyRead();

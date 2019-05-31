@@ -159,6 +159,14 @@ void RegularLocalSocket::sendAboutZigBeeModem(QVariantHash aboutModem)
 
 }
 
+void RegularLocalSocket::killAllObjects()
+{
+    stopConnection();
+
+    deleteLater();
+
+}
+
 //---------------------------------------------------------------------------------------
 
 void RegularLocalSocket::mReadyRead()
