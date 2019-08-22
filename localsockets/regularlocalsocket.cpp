@@ -155,6 +155,8 @@ void RegularLocalSocket::mWrite2extension(const QVariant &s_data, const quint16 
 
 void RegularLocalSocket::sendAboutZigBeeModem(QVariantHash aboutModem)
 {
+    if(verboseMode)
+        qDebug() << "sendAboutZigBeeModem " << aboutModem;
     mWrite2extension(aboutModem, MTD_EXT_ABOUT_ZB);
 
 }
