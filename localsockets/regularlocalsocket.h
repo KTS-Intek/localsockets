@@ -39,9 +39,9 @@ signals:
     void command4dev(quint16 command, QString args);//directly to scheduler, command is a pollcode,
 
 //    void command4devHash(quint16 command, QVariantHash hash);//directly to scheduler, command is a pollcode,
-
+#ifdef ENABLE_VERBOSE_SERVER
     void appendDbgExtData(quint32 sourceType, QString data);
-
+#endif
 
 
 
