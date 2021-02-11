@@ -33,7 +33,7 @@ signals:
     void stopZombieDetect();
 
     //external
-    void append2log(QString mess);
+    void append2log(QString message);
 
     //to inherited
     void onReadData(QVariant dataVar, quint16 command);
