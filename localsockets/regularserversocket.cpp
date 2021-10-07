@@ -1,6 +1,6 @@
 #include "regularserversocket.h"
 
-///[!] Matilda-IO
+///[!] MatildaIO
 #include "src/shared/readwriteiodevice.h"
 
 
@@ -50,6 +50,8 @@ void RegularServerSocket::mReadyRead()
     disconnect(this, SIGNAL(readyRead()), this, SLOT(mReadyRead()) );
     mReadyReadF();
     connect(this, SIGNAL(readyRead()), this, SLOT(mReadyRead()) );
+
+    freeWriteLater();
 }
 
 void RegularServerSocket::mWrite2extension(const QVariant &s_data, const quint16 &s_command)
@@ -61,8 +63,8 @@ void RegularServerSocket::mWrite2extension(const QVariant &s_data, const quint16
         return;
     }
 
-    if(verboseMode && s_command != getZombieCommand())
-        qDebug() << "mWrite2extension " << s_command << s_data<< mtdExtNameTxt;
+//    if(verboseMode && s_command != getZombieCommand()) a lot of data
+//        qDebug() << "mWrite2extension " << s_command << s_data<< mtdExtNameTxt;
 
      ReadWriteIODevice::mWrite2Socket(this, s_data, s_command, verboseMode, NET_SPEED_UFS_1);//   //     qDebug() << block.toHex();
 
@@ -76,6 +78,11 @@ void RegularServerSocket::mWrite2extension(const QVariant &s_data, const quint16
 //    write(block);
 //    waitForBytesWritten(50);
 
+}
+
+void RegularServerSocket::mWrite2extensionLater(const QVariant &s_data, const quint16 &s_command)
+{
+    writelater = MWriteLater(s_data, s_command);
 }
 
 void RegularServerSocket::onDisconn()
@@ -93,6 +100,27 @@ void RegularServerSocket::onZombie()
     if(command > 0)
         mWrite2extension(QByteArray("h"), command);// MTD_EXT_PING);
     emit startZombieKiller();
+}
+
+void RegularServerSocket::onPing2serverReceived()
+{
+    onZombie();
+}
+
+void RegularServerSocket::onPingReceived()
+{
+    emit startZombieDetect();
+    emit stopZombieKiller();
+    if(verboseMode)
+        qDebug() << "ping";
+}
+
+void RegularServerSocket::freeWriteLater()
+{
+    if(writelater.hasData){
+        writelater.hasData = false;
+        mWrite2extension(writelater.s_data, writelater.s_command);
+    }
 }
 
 void RegularServerSocket::mReadyReadF()

@@ -50,14 +50,30 @@ public slots:
 
     void mWrite2extension(const QVariant &s_data, const quint16 &s_command);
 
+    void mWrite2extensionLater(const QVariant &s_data, const quint16 &s_command);
+
     void onDisconn();
 
     void onZombie();
 
+    void onPing2serverReceived();
+
+    void onPingReceived();
+
+private slots:
+    void freeWriteLater();
 
 private:
     void mReadyReadF();
 
+    struct MWriteLater
+    {
+        QVariant s_data;
+        quint16 s_command;
+        bool hasData;
+        MWriteLater() : hasData(false) {}
+        MWriteLater(const QVariant &s_data, const quint16 &s_command) : s_data(s_data), s_command(s_command), hasData(true) {}
+    } writelater;
 
 };
 

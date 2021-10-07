@@ -20,9 +20,23 @@ RegularLocalSocket::RegularLocalSocket(const bool &verboseMode, QObject *parent)
 {
     this->verboseMode = verboseMode;//extended out / verbouseMode
 #ifdef DISABLE_LOCALSOCKETVERBOSE
-    this->verboseMode = false;
+    this->verboseMode = false; //it is disabled for test only
 #endif
     stopAll = false;
+}
+
+//---------------------------------------------------------------------------------------
+
+QString RegularLocalSocket::getPath2server()
+{
+    return PathsResolver::defLocalServerName();
+}
+
+//---------------------------------------------------------------------------------------
+
+QVariant RegularLocalSocket::getExtName()
+{
+    return QVariant(mtdExtName);
 }
 
 //---------------------------------------------------------------------------------------
@@ -30,6 +44,43 @@ RegularLocalSocket::RegularLocalSocket(const bool &verboseMode, QObject *parent)
 void RegularLocalSocket::decodeReadData(const QVariant &dataVar, const quint16 &command)
 {
     qDebug() << "RegularLocalSocket::decodeReadData you did'n inherit this function " << dataVar << command;
+}
+
+bool RegularLocalSocket::isConnectionStateUp()
+{
+    return (state() == QLocalSocket::ConnectedState);
+
+}
+
+qint64 RegularLocalSocket::mWrite2extensionF(const QVariant &s_data, const quint16 &s_command)
+{
+    if(stopAll){
+        if(verboseMode)
+            qDebug() << "w stop " << stopAll;
+        return -2;
+    }
+
+    if(!isConnectionStateUp()){
+        if(verboseMode)
+            qDebug() << "w !state " << state();
+        emit startReconnTmr();
+        return -1;
+    }
+#ifdef ENABLE_VERBOSE_SERVER
+    if(activeDbgMessages)
+        emit appendDbgExtData(DBGEXT_THELOCALSOCKET, QString("command w: %1, data=%2").arg(s_command).arg(s_data.toString()));
+#endif
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_5_6);
+    out << (quint32)0;
+    out << s_command << s_data;
+    out.device()->seek(0);
+    out << (quint32)(block.size() - sizeof(quint32));
+    const qint64 r = write(block);
+    waitForBytesWritten(50);
+    timeHalmo.restart();
+    return r;
 }
 
 //---------------------------------------------------------------------------------------
@@ -63,7 +114,11 @@ void RegularLocalSocket::connect2extension()
     }
     stopAll = false;
     zombieNow = 0;
-    connectToServer(PathsResolver::defLocalServerName());
+
+    const QString path2server = getPath2server();
+
+    if(!path2server.isEmpty())
+        connectToServer(path2server);
 
     if(waitForConnected(500)){
 #ifdef HASGUI4USR
@@ -74,11 +129,11 @@ void RegularLocalSocket::connect2extension()
 
         emit startZombieDetect();
         if(verboseMode)
-            qDebug() << "connect2extension works" << errorString() << state() << mtdExtName;
+            qDebug() << "connect2extension works" << path2server << errorString() << state() << mtdExtName;
         return;
     }
     if(verboseMode )
-        qDebug() << "connect2extension not working " << errorString() << state() << mtdExtName;
+        qDebug() << "connect2extension not working " << path2server << errorString() << state() << mtdExtName;
 
     stopAll = true;
     emit startReconnTmr();
@@ -129,32 +184,8 @@ void RegularLocalSocket::onThreadStarted()
 
 void RegularLocalSocket::mWrite2extension(const QVariant &s_data, const quint16 &s_command)
 {
-    if(stopAll){
-        if(verboseMode)
-            qDebug() << "w stop " << stopAll;
-        return ;
-    }
+    mWrite2extensionF(s_data, s_command);
 
-    if(state() != QLocalSocket::ConnectedState){
-        if(verboseMode)
-            qDebug() << "w !state " << state();
-        emit startReconnTmr();
-        return;
-    }
-#ifdef ENABLE_VERBOSE_SERVER
-    if(activeDbgMessages)
-        emit appendDbgExtData(DBGEXT_THELOCALSOCKET, QString("command w: %1, data=%2").arg(s_command).arg(s_data.toString()));
-#endif
-    QByteArray block;
-    QDataStream out(&block, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_5_6);
-    out << (quint32)0;
-    out << s_command << s_data;
-    out.device()->seek(0);
-    out << (quint32)(block.size() - sizeof(quint32));
-    write(block);
-    waitForBytesWritten(50);
-    timeHalmo.restart();
 }
 
 //---------------------------------------------------------------------------------------
@@ -173,6 +204,13 @@ void RegularLocalSocket::killAllObjects()
 
     deleteLater();
 
+}
+
+//---------------------------------------------------------------------------------------
+
+void RegularLocalSocket::forcedReading()
+{
+     mReadyReadF();
 }
 
 //---------------------------------------------------------------------------------------
@@ -212,7 +250,7 @@ void RegularLocalSocket::onZombie()
 
 void RegularLocalSocket::mReadyReadF()
 {
-    if(state() != QLocalSocket::ConnectedState){
+    if(!isConnectionStateUp()){
         QTimer::singleShot(11, this, SLOT(onDisconn()));
         if(verboseMode)
             qDebug() << "r !state " << state();
@@ -284,8 +322,10 @@ void RegularLocalSocket::decodeReadDataF(const QVariant &dataVar, const quint16 
     switch(command){
 
     case MTD_EXT_GET_INFO: {
-        mWrite2extension(mtdExtName, MTD_EXT_GET_INFO );
+        mWrite2extension(getExtName(), MTD_EXT_GET_INFO );
         if(verboseMode) qDebug() << "ext " << mtdExtName << dataVar;
+        emit connectionIsRegistered();
+
         break;}
 
     case MTD_EXT_GET_LOCATION: {

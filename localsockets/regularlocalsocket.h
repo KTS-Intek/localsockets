@@ -21,9 +21,19 @@ public:
 
     int inConn;
 
+    virtual QString getPath2server();
+
+    virtual QVariant getExtName();
+
     virtual void decodeReadData(const QVariant &dataVar, const quint16 &command);
 
+    bool isConnectionStateUp();
+
+    qint64 mWrite2extensionF(const QVariant &s_data, const quint16 &s_command);
+
 signals:
+
+    void connectionIsRegistered();
 
     void startReconnTmr();
 
@@ -61,6 +71,8 @@ public slots:
     void sendAboutZigBeeModem(QVariantHash aboutModem);
 
     void killAllObjects();
+
+    void forcedReading();
 
 private slots:
     void mReadyRead();
