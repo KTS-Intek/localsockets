@@ -7,6 +7,13 @@
 #include <QVariantMap>
 
 
+#include "moji_defy.h"
+
+#include "matildalimits.h"
+#include "dbgaboutsourcetype.h"
+
+
+
 class RegularLocalSocket : public QLocalSocket
 {
     Q_OBJECT

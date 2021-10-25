@@ -1,3 +1,10 @@
+# Version=0.0.1
+#
+#
+#Dependencies -
+# MatildaIO
+
+
 INCLUDEPATH  += $$PWD\
                 $$PWD/../../defines/defines
                 $$PWD/../../defines/define-types

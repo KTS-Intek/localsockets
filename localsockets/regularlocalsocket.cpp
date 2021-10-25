@@ -7,13 +7,6 @@
 #include "matilda-bbb-src/shared/pathsresolver.h"
 //#include "src/matilda/settloader4matilda.h"
 
-#include "moji_defy.h"
-
-#include "matildalimits.h"
-#include "dbgaboutsourcetype.h"
-
-
-
 //---------------------------------------------------------------------------------------
 
 RegularLocalSocket::RegularLocalSocket(const bool &verboseMode, QObject *parent) : QLocalSocket(parent)
