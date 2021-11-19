@@ -275,13 +275,16 @@ void RegularLocalSocket::mReadyReadF()
 
     while(bytesAvailable() < blockSize && timeG.elapsed() < timeOutG){
 
-        if(waitForReadyRead(timeOut))
+        if(waitForReadyRead(timeOut) && verboseMode)
             qDebug()<< "readServer1:"<< bytesAvailable() << blockSize;
     }
 
 
     if(bytesAvailable() < blockSize || blockSize > MAX_PACKET_LEN || bytesAvailable() > MAX_PACKET_LEN){
-        qDebug()<< "readServer:" << blockSize << bytesAvailable() << readAll().toHex();
+        if(verboseMode)
+            qDebug()<< "readServer:" << blockSize << bytesAvailable() << readAll().toHex();
+        else
+            readAll();
         return;
     }
 

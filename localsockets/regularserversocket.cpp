@@ -58,7 +58,8 @@ void RegularServerSocket::mWrite2extension(const QVariant &s_data, const quint16
 {
     if(state() != QLocalSocket::ConnectedState){
         emit onConnectionLost();// startReconnTmr();
-        qDebug() << "!state " << state()<< mtdExtNameTxt;
+        if(verboseMode)
+            qDebug() << "!state " << state()<< mtdExtNameTxt;
         onDisconn();
         return;
     }
@@ -127,7 +128,8 @@ void RegularServerSocket::mReadyReadF()
 {
     if(state() != QLocalSocket::ConnectedState){
         QTimer::singleShot(11, this, SLOT(onDisconn()));
-        qDebug() << "!r state " << state()<< mtdExtNameTxt;
+        if(verboseMode)
+            qDebug() << "!r state " << state()<< mtdExtNameTxt;
         return;
     }
 
@@ -137,7 +139,7 @@ void RegularServerSocket::mReadyReadF()
     const int timeOut = 500;
     const int timeOutG = 9000;
 
-    const QVariant readVar = ReadWriteIODevice::readIODevice(this, timeOut, timeOutG, hasErr, hasMoreData, serverCommand, blockSize);
+    const QVariant readVar = ReadWriteIODevice::readIODevice(this, timeOut, verboseMode, timeOutG, hasErr, hasMoreData, serverCommand, blockSize);
 
     if(hasErr){
         readAll();
