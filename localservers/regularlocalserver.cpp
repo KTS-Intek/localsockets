@@ -93,4 +93,6 @@ void RegularLocalServer::startServer()
 
     if(verboseMode)
         qDebug() << "RegularLocalServer startServer " << isListening() << serverName() << errorString();
+
+    emit append2log(tr("Data holder server is ready"));
 }

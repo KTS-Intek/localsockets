@@ -2,7 +2,7 @@
 #define REGULARLOCALSOCKET_H
 
 #include <QLocalSocket>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QVariantHash>
 #include <QVariantMap>
 
@@ -22,7 +22,7 @@ public:
     bool activeDbgMessages;
 
     quint16 mtdExtName;
-    QTime timeHalmo;
+    QElapsedTimer timeHalmo;
     quint8 zombieNow;
     bool stopAll, verboseMode;
 

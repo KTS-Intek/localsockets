@@ -11,7 +11,7 @@
 
 RegularLocalSocket::RegularLocalSocket(const bool &verboseMode, QObject *parent) : QLocalSocket(parent)
 {
-    this->verboseMode = verboseMode;//extended out / verbouseMode
+    this->verboseMode = verboseMode;//extended out / verboseMode
 #ifdef DISABLE_LOCALSOCKETVERBOSE
     this->verboseMode = false; //it is disabled for test only
 #endif
@@ -115,7 +115,7 @@ void RegularLocalSocket::connect2extension()
 
     if(waitForConnected(500)){
 #ifdef HASGUI4USR
-        if(!verboseMode)
+        if(verboseMode)
         qDebug() << "connect2extension works" << errorString() << state() << mtdExtName;
 
 #endif
@@ -267,7 +267,7 @@ void RegularLocalSocket::mReadyReadF()
 
     inStrm >> blockSize;
 
-    QTime timeG;
+    QElapsedTimer timeG;
     timeG.start();
 
     const int timeOutG = 9999;
